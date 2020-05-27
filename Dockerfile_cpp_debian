@@ -1,0 +1,146 @@
+# Dockerfile for Aeron C++ SDK
+# Building and running on Debian-based distros
+#
+# Copyright (c) 2017-2020 Neomantra BV
+# Released under the MIT License, see LICENSE.txt
+
+
+###############################################################################
+# Builder stage
+###############################################################################
+
+ARG AERON_BUILD_IMAGE_BASE="debian"
+ARG AERON_BUILD_IMAGE_TAG="stretch-slim"
+
+FROM ${AERON_BUILD_IMAGE_BASE}:${AERON_BUILD_IMAGE_TAG} AS aeron-builder
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+        ca-certificates \
+        cmake \
+        curl \
+        g++ \
+        libbsd-dev \
+        libbsd0 \
+        make \
+        unzip \
+        uuid-dev \
+        zlib1g-dev
+
+ARG AERON_VERSION="master"
+ARG AERON_JLEVEL=1
+
+RUN cd /tmp \
+    && if [ "$AERON_VERSION" = "master" ]; then \
+            curl -fSL https://github.com/real-logic/aeron/archive/master.tar.gz -o aeron.tar.gz \
+        ; else \
+            curl -fSL https://github.com/real-logic/Aeron/archive/${AERON_VERSION}.tar.gz -o aeron.tar.gz \
+        ; fi \
+    && tar xzf aeron.tar.gz \
+    && rm aeron.tar.gz
+
+RUN cd /tmp/aeron-${AERON_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake -G "Unix Makefiles" -DBUILD_AERON_DRIVER=ON .. \
+    && make -j ${AERON_JLEVEL} all
+
+RUN cd /tmp/aeron-${AERON_VERSION}/build \
+    && make -j ${AERON_JLEVEL} install
+
+ARG AERON_CTEST=""
+
+RUN if [ ${AERON_CTEST} ] ; then \
+        cd /tmp/aeron-${AERON_VERSION}/build \
+        && ctest -C Release -j ${AERON_JLEVEL} ; \
+    fi
+
+
+###############################################################################
+# Runtime stage
+###############################################################################
+
+ARG AERON_RUNTIME_IMAGE_BASE="debian"
+ARG AERON_RUNTIME_IMAGE_TAG="stretch-slim"
+
+#FROM ${AERON_RUNTIME_IMAGE_BASE}:${AERON_RUNTIME_IMAGE_TAG} AS aeron-driver
+FROM debian:stretch-slim AS aeron-driver
+
+# Copy files -- possibly needs to be updated between Aeron releases
+COPY --from=aeron-builder /usr/local/lib/libaeron.so /usr/local/lib/libaeron.so
+COPY --from=aeron-builder /usr/local/lib/libaeron_static.a /usr/local/lib/libaeron_static.a
+COPY --from=aeron-builder /usr/local/include/aeron/. /usr/local/include/aeron/.
+COPY --from=aeron-builder /usr/local/lib/libaeron_client_shared.so /usr/local/lib/libaeron_client_shared.so
+COPY --from=aeron-builder /usr/local/lib/libaeron_client.a /usr/local/lib/libaeron_client.a
+COPY --from=aeron-builder /usr/local/include/./HeartbeatTimestamp.h /usr/local/include/./HeartbeatTimestamp.h
+COPY --from=aeron-builder /usr/local/include/./BufferBuilder.h /usr/local/include/./BufferBuilder.h
+COPY --from=aeron-builder /usr/local/include/./protocol/ /usr/local/include/./protocol/
+COPY --from=aeron-builder /usr/local/include/./Subscription.h /usr/local/include/./Subscription.h
+COPY --from=aeron-builder /usr/local/include/./ChannelUriStringBuilder.h /usr/local/include/./ChannelUriStringBuilder.h
+COPY --from=aeron-builder /usr/local/include/./Publication.h /usr/local/include/./Publication.h
+COPY --from=aeron-builder /usr/local/include/./DriverProxy.h /usr/local/include/./DriverProxy.h
+COPY --from=aeron-builder /usr/local/include/./Counter.h /usr/local/include/./Counter.h
+COPY --from=aeron-builder /usr/local/include/./ClientConductor.h /usr/local/include/./ClientConductor.h
+COPY --from=aeron-builder /usr/local/include/./Context.h /usr/local/include/./Context.h
+COPY --from=aeron-builder /usr/local/include/./ExclusivePublication.h /usr/local/include/./ExclusivePublication.h
+COPY --from=aeron-builder /usr/local/include/./LogBuffers.h /usr/local/include/./LogBuffers.h
+COPY --from=aeron-builder /usr/local/include/./DriverListenerAdapter.h /usr/local/include/./DriverListenerAdapter.h
+COPY --from=aeron-builder /usr/local/include/./ImageFragmentAssembler.h /usr/local/include/./ImageFragmentAssembler.h
+COPY --from=aeron-builder /usr/local/include/./ControlledFragmentAssembler.h /usr/local/include/./ControlledFragmentAssembler.h
+COPY --from=aeron-builder /usr/local/include/./command/ /usr/local/include/./command/
+COPY --from=aeron-builder /usr/local/include/./Aeron.h /usr/local/include/./Aeron.h
+COPY --from=aeron-builder /usr/local/include/./ChannelUri.h /usr/local/include/./ChannelUri.h
+COPY --from=aeron-builder /usr/local/include/./concurrent/ /usr/local/include/./concurrent/
+COPY --from=aeron-builder /usr/local/include/./ImageControlledFragmentAssembler.h /usr/local/include/./ImageControlledFragmentAssembler.h
+COPY --from=aeron-builder /usr/local/include/./Image.h /usr/local/include/./Image.h
+COPY --from=aeron-builder /usr/local/include/./util /usr/local/include/./util
+COPY --from=aeron-builder /usr/local/include/./FragmentAssembler.h /usr/local/include/./FragmentAssembler.h
+COPY --from=aeron-builder /usr/local/include/./CncFileDescriptor.h /usr/local/include/./CncFileDescriptor.h
+COPY --from=aeron-builder /usr/local/bin/AeronStat /usr/local/bin/AeronStat
+COPY --from=aeron-builder /usr/local/bin/BasicPublisher /usr/local/bin/BasicPublisher
+COPY --from=aeron-builder /usr/local/bin/TimeTests /usr/local/bin/TimeTests
+COPY --from=aeron-builder /usr/local/bin/BasicSubscriber /usr/local/bin/BasicSubscriber
+COPY --from=aeron-builder /usr/local/bin/StreamingPublisher /usr/local/bin/StreamingPublisher
+COPY --from=aeron-builder /usr/local/bin/RateSubscriber /usr/local/bin/RateSubscriber
+COPY --from=aeron-builder /usr/local/bin/Ping /usr/local/bin/Ping
+COPY --from=aeron-builder /usr/local/bin/Pong /usr/local/bin/Pong
+COPY --from=aeron-builder /usr/local/bin/Throughput /usr/local/bin/Throughput
+COPY --from=aeron-builder /usr/local/bin/ErrorStat /usr/local/bin/ErrorStat
+COPY --from=aeron-builder /usr/local/bin/LossStat /usr/local/bin/LossStat
+COPY --from=aeron-builder /usr/local/bin/DriverTool /usr/local/bin/DriverTool
+COPY --from=aeron-builder /usr/local/bin/ExclusiveThroughput /usr/local/bin/ExclusiveThroughput
+COPY --from=aeron-builder /usr/local/bin/PingPong /usr/local/bin/PingPong
+COPY --from=aeron-builder /usr/local/lib/libaeron_driver.so /usr/local/lib/libaeron_driver.so
+COPY --from=aeron-builder /usr/local/lib/libaeron_driver_static.a /usr/local/lib/libaeron_driver_static.a
+COPY --from=aeron-builder /usr/local/bin/aeronmd /usr/local/bin/aeronmd
+COPY --from=aeron-builder /usr/local/include/aeronmd/ /usr/local/include/aeronmd/
+
+# Install runtime apt dependencies and ldconfig
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+        libbsd0 \
+        libuuid1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
+
+# Restate ARGS for labels
+ARG AERON_BUILD_IMAGE_BASE="debian"
+ARG AERON_BUILD_IMAGE_TAG="stretch-slim"
+ARG AERON_RUNTIME_IMAGE_BASE="debian"
+ARG AERON_RUNTIME_IMAGE_TAG="stretch-slim"
+ARG AERON_VERSION="master"
+ARG AERON_JLEVEL=1
+ARG AERON_CTEST=""
+
+# Labels
+LABEL maintainer="Evan Wies <evan@neomantra.net>"
+LABEL AERON_BUILD_IMAGE_BASE="${AERON_BUILD_IMAGE_BASE}"
+LABEL AERON_BUILD_IMAGE_TAG="${AERON_BUILD_IMAGE_TAG}"
+LABEL AERON_RUNTIME_IMAGE_BASE="${AERON_RUNTIME_IMAGE_BASE}"
+LABEL AERON_RUNTIME_IMAGE_TAG="${AERON_RUNTIME_IMAGE_TAG}"
+LABEL AERON_VERSION="${AERON_VERSION}"
+LABEL AERON_JLEVEL="${AERON_JLEVEL}"
+LABEL AERON_CTEST="${AERON_CTEST}"
+
+# ENTRYPOINT directive
+ENTRYPOINT [ "/usr/local/bin/aeronmd" ]
