@@ -1,0 +1,76 @@
+# docker-aeron GitLab CI/CD
+# Copyright (c) 2020 Neomantra BV
+
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - build
+
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+
+###############################################################################################
+# Templates
+###############################################################################################
+
+.docker_build_template:
+  stage: build
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+  script:
+    - |
+      docker pull $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX} || true
+      docker build \
+          --build-arg AERON_VERSION=$AERON_VERSION \
+          --cache-from $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX} \
+          -f $CI_PROJECT_DIR/$DOCKERFILE_NAME \
+          -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX}-${CI_COMMIT_SHA} \
+          -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX} \
+          $CI_PROJECT_DIR
+      docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX}-${CI_COMMIT_SHA}
+      docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:${IMAGE_TAG_PREFIX}
+
+
+###############################################################################################
+# Images
+###############################################################################################
+
+master-build:
+  extends: .docker_build_template
+  only:
+    - master
+  variables:
+    AERON_VERSION: master
+    DOCKERFILE_NAME: Dockerfile_cpp_debian
+    IMAGE_NAME: cpp-debian
+    IMAGE_TAG_PREFIX: master
+
+
+tag-build:
+  extends: .docker_build_template
+  only:
+    - tags
+  variables:
+    AERON_VERSION: $CI_COMMIT_TAG
+    DOCKERFILE_NAME: Dockerfile_cpp_debian
+    IMAGE_NAME: cpp-debian
+    IMAGE_TAG_PREFIX: $CI_COMMIT_TAG
+
+
+branch-build:
+  extends: .docker_build_template
+  only:
+    - branches
+  except:
+    - master
+  variables:
+    AERON_VERSION: master
+    DOCKERFILE_NAME: Dockerfile_cpp_debian
+    IMAGE_NAME: cpp-debian
+    IMAGE_TAG_PREFIX: $CI_COMMIT_REF_NAME

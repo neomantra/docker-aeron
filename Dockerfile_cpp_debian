@@ -4,13 +4,15 @@
 # Copyright (c) 2017-2020 Neomantra BV
 # Released under the MIT License, see LICENSE.txt
 
+ARG AERON_BUILD_IMAGE_BASE="debian"
+ARG AERON_BUILD_IMAGE_TAG="stretch-slim"
+
+ARG AERON_RUNTIME_IMAGE_BASE="debian"
+ARG AERON_RUNTIME_IMAGE_TAG="stretch-slim"
 
 ###############################################################################
 # Builder stage
 ###############################################################################
-
-ARG AERON_BUILD_IMAGE_BASE="debian"
-ARG AERON_BUILD_IMAGE_TAG="stretch-slim"
 
 FROM ${AERON_BUILD_IMAGE_BASE}:${AERON_BUILD_IMAGE_TAG} AS aeron-builder
 
@@ -31,11 +33,7 @@ ARG AERON_VERSION="master"
 ARG AERON_JLEVEL=1
 
 RUN cd /tmp \
-    && if [ "$AERON_VERSION" = "master" ]; then \
-            curl -fSL https://github.com/real-logic/aeron/archive/master.tar.gz -o aeron.tar.gz \
-        ; else \
-            curl -fSL https://github.com/real-logic/Aeron/archive/${AERON_VERSION}.tar.gz -o aeron.tar.gz \
-        ; fi \
+    && curl -fSL https://github.com/real-logic/Aeron/archive/${AERON_VERSION}.tar.gz -o aeron.tar.gz \
     && tar xzf aeron.tar.gz \
     && rm aeron.tar.gz
 
@@ -60,11 +58,7 @@ RUN if [ ${AERON_CTEST} ] ; then \
 # Runtime stage
 ###############################################################################
 
-ARG AERON_RUNTIME_IMAGE_BASE="debian"
-ARG AERON_RUNTIME_IMAGE_TAG="stretch-slim"
-
-#FROM ${AERON_RUNTIME_IMAGE_BASE}:${AERON_RUNTIME_IMAGE_TAG} AS aeron-driver
-FROM debian:stretch-slim AS aeron-driver
+FROM "${AERON_RUNTIME_IMAGE_BASE}:${AERON_RUNTIME_IMAGE_TAG}" AS aeron-runtime
 
 # Copy files -- possibly needs to be updated between Aeron releases
 COPY --from=aeron-builder /usr/local/lib/libaeron.so /usr/local/lib/libaeron.so

@@ -3,12 +3,12 @@
 Docker tooling for [Aeron Messaging](https://github.com/real-logic/aeron) (https://github.com/real-logic/aeron).
 
 Our Docker images are available from the GitLab.com registry at:
-  * registry.gitlab.com/neomantra/oss/aeron
+  * `registry.gitlab.com/neomantra/oss/aeron/<dist-type>:<version>`
 
-The following image tags are built automatically:
+The following image tags are available:
 
-  * `registry.gitlab.com/neomantra/oss/aeron:master`
-  * `registry.gitlab.com/neomantra/oss/aeron:1.28.0`
+  * `registry.gitlab.com/neomantra/oss/aeron/cpp-debian:master`
+  * `registry.gitlab.com/neomantra/oss/aeron/cpp-debian:1.28.0`
 
 ## Running the "Aeron Media Driver"
 
@@ -27,18 +27,18 @@ docker run --shm-size=128M --ipc host --network host registry.gitlab.com/neomant
 The C media driver [can be configured](https://github.com/real-logic/aeron/wiki/Configuration-Options#c-media-driver) with arguments like `-D<option>=<value>` or with environment variables like `AERON_PRINT_CONFIGURATION`.
 
 ```
-docker run --env AERON_PRINT_CONFIGURATION=1 --shm-size=256M --ipc host --network host registry.gitlab.com/neomantra/oss/aeron:cpp-debian-1.28.0
+docker run --env AERON_PRINT_CONFIGURATION=1 --shm-size=256M --ipc host --network host registry.gitlab.com/neomantra/oss/aeron/cpp-debian:1.28.0
 
-docker run --shm-size=256M --ipc host --network host registry.gitlab.com/neomantra/oss/aeron:cpp-debian-1.28.0 -DAERON_PRINT_CONFIGURATION=1
+docker run --shm-size=256M --ipc host --network host registry.gitlab.com/neomantra/oss/aeron/cpp-debian:1.28.0 -DAERON_PRINT_CONFIGURATION=1
 ```
 
 ## Building
 
 ```
-# Build master
+# Build Aeron GitHub master
 docker build  -f Dockerfile_cpp_debian -t aeron-cpp-debian .
 
-# Build a specific release
+# Build a specific Aeron GitHub release
 docker build  -f Dockerfile_cpp_debian --build-arg AERON_VERSION=1.28.0 -t aeron-cpp-debian:1.28.0 .
 
 ```
