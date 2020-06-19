@@ -1,0 +1,48 @@
+# docker-aeron .travis.yml
+# Copyright (c) 2020 Neomantra BV
+#
+# Builds Aeron Messaging images on Travis CI:
+#   neomantra/aeron-cpp-debian:latest
+#   neomantra/aeron-cpp-debian:<aeron-version>
+#   
+#
+# https://travis-ci.org/neomantra/docker-aeron
+#
+# Travis Environment Variables:
+#   DOCKER_ORG
+#   DOCKER_USERNAME
+#   DOCKER_PASSWORD
+#
+
+sudo: required
+
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: build cpp-debian docker image for master
+      if: branch = master
+      script:
+      - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
+      - docker pull $DOCKER_ORG/aeron-cpp-debian:latest || true
+      - docker build \
+          --cache-from $DOCKER_ORG/aeron-cpp-debian:latest \
+          --build-arg AERON_VERSION=master \
+          -t $DOCKER_ORG/aeron-cpp-debian:latest \
+          -f Dockerfile_cpp_debian \
+          .
+      - docker push $DOCKER_ORG/aeron-cpp-debian:latest
+
+    - stage: build cpp-debian docker image for tags
+      if: tag IS present
+      script:
+      - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
+      - docker pull $DOCKER_ORG/aeron-cpp-debian:latest || true
+      - docker build \
+          --cache-from $DOCKER_ORG/aeron-cpp-debian:latest \
+          --build-arg AERON_VERSION=$TRAVIS_TAG \
+          -t $DOCKER_ORG/aeron-cpp-debian:$TRAVIS_TAG \
+          -f Dockerfile_cpp_debian \
+          .
+      - docker push $DOCKER_ORG/aeron-cpp-debian:$TRAVIS_TAG

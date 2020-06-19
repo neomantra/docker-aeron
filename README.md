@@ -1,14 +1,38 @@
 # docker-aeron
 
-Docker tooling for [Aeron Messaging](https://github.com/real-logic/aeron) (https://github.com/real-logic/aeron).
+Docker tooling for [Aeron Messaging](https://github.com/real-logic/aeron).
+
+----
+
+# Docker Registry
+
+[Travis CI](https://travis-ci.org/neomantra/docker-aeron) builds Aeron images for the the [Docker Registry](https://hub.docker.com/r/neomantra/aeron).
+
+Our Docker images are available from the Docker Registry at:
+  * `neomantra/aeron-<dist-type>:<aeron-version>`
+
+The following image are available:
+
+  * `neomantra/aeron-cpp-debian:latest`
+  * `neomantra/aeron-cpp-debian:1.28.2`
+
+----
+
+# GitLab Registry
+
+[GitLab CI](https://gitlab.com/neomantra/oss/aeron/pipelines) builds Aeron images for the the [GitLab Registry](https://gitlab.com/neomantra/oss/aeron/container_registry).
+
+*NOTE:* Our GitLab Registry is not publicly accessible yet.  Use the Docker Registry.
 
 Our Docker images are available from the GitLab.com registry at:
   * `registry.gitlab.com/neomantra/oss/aeron/<dist-type>:<version>`
 
-The following image tags are available:
+The following image are available:
 
   * `registry.gitlab.com/neomantra/oss/aeron/cpp-debian:master`
-  * `registry.gitlab.com/neomantra/oss/aeron/cpp-debian:1.28.0`
+  * `registry.gitlab.com/neomantra/oss/aeron/cpp-debian:1.28.2`
+
+----
 
 ## Running the "Aeron Media Driver"
 
