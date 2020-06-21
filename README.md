@@ -1,12 +1,14 @@
 # docker-aeron
 
+[![Travis Status](https://api.travis-ci.org/neomantra/docker-aeron.svg?branch=master)](https://travis-ci.org/github/neomantra/docker-aeron)
+
 Docker tooling for [Aeron Messaging](https://github.com/real-logic/aeron).
 
 ----
 
 # Docker Registry
 
-[Travis CI](https://travis-ci.org/neomantra/docker-aeron) builds Aeron images for the the [Docker Registry](https://hub.docker.com/r/neomantra/aeron).
+[Travis CI](https://travis-ci.org/neomantra/docker-aeron) builds Aeron images for the the [Docker Registry](https://hub.docker.com/r/neomantra/aeron-cpp-debian).
 
 Our Docker images are available from the Docker Registry at:
   * `neomantra/aeron-<dist-type>:<aeron-version>`
